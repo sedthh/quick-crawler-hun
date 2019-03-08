@@ -5,6 +5,7 @@ import bs4
 import re
 import time
 from datetime import datetime
+from urllib.parse import urlsplit
 
 try:
 	import lara
@@ -12,10 +13,12 @@ except ImportError as error:
 	sys.path.append(os.path.join(os.pardir, "lara-hungarian-nlp"))
 	import lara
 
+
 class QuickCrawler:
 
 	def __init__(self, settings={}, text_intents={}, url_intents={}):
-		self._agent = settings.get("agent", "Mozilla/5.0 (compatible; Quick-Python-Crawler/0.1; +https://github.com/sedthh/quick-crawler-hun)")
+		self._agent = settings.get("agent",
+								   "Mozilla/5.0 (compatible; Quick-Python-Crawler/0.1; +https://github.com/sedthh/quick-crawler-hun)")
 		self._depth = settings.get("depth", 2)
 		self._sleep = settings.get("sleep", .25)
 		self._timeout = settings.get("timeout", 3)
@@ -90,7 +93,7 @@ class QuickCrawler:
 		if not url:
 			return {}
 		for format in self._ignore:
-			if url.endswith("."+format):
+			if url.endswith("." + format):
 				self.log(f"WARNING: format for {url} is not allowed", 1)
 				return {}
 		plain_url = self._get_plain_url(url)
@@ -134,10 +137,12 @@ class QuickCrawler:
 						time.sleep(self._sleep)
 						if not re.findall(r'^https?\:\/\/\S+', link, re.IGNORECASE):
 							if link not in url:
-								if link[0] in ("\\", "/") and url[-1] in ("\\", "/"):
-									link = url + ''.join(link[1:])
-								else:
-									link = url + link
+								domain = "{0.scheme}://{0.netloc}/".format(urlsplit(url))
+								if domain not in link:
+									if link[0] in ("\\", "/") and domain[-1] in ("\\", "/"):
+										link = domain + ''.join(link[1:])
+									else:
+										link = domain + link
 						subdomain = self._crawl_url(link, depth - 1)
 						if subdomain:
 							for key, value in subdomain.items():
